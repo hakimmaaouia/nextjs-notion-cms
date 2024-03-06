@@ -4,7 +4,6 @@ import type { AppProps } from 'next/app'
 import { useRouter } from 'next/router'
 
 import * as Fathom from 'fathom-client'
-import { GoogleAnalytics, GoogleTagManager } from '@next/third-parties/google'
 // used for rendering equations (optional)
 import 'katex/dist/katex.min.css'
 import posthog from 'posthog-js'
@@ -62,11 +61,5 @@ export default function App({ Component, pageProps }: AppProps) {
     }
   }, [router.events])
 
-  return (
-    <>
-      <GoogleAnalytics gaId='G-09FJVF9NMV' />
-      <GoogleTagManager gtmId='GTM-59CBP7QV' />
-      <Component {...pageProps} />
-    </>
-  )
+  return <Component {...pageProps} />
 }
