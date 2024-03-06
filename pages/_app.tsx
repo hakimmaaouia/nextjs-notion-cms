@@ -2,6 +2,7 @@
 import * as React from 'react'
 import type { AppProps } from 'next/app'
 import { useRouter } from 'next/router'
+import Script from 'next/script'
 
 import * as Fathom from 'fathom-client'
 // used for rendering equations (optional)
@@ -61,5 +62,22 @@ export default function App({ Component, pageProps }: AppProps) {
     }
   }, [router.events])
 
-  return <Component {...pageProps} />
+  return (
+    <>
+      <Script
+        strategy='lazyOnload'
+        src={`https://www.googletagmanager.com/gtag/js?id=G-09FJVF9NMV`}
+      />
+
+      <Script strategy='lazyOnload'>
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-09FJVF9NMV',{
+          page_path: window.location.pathname`}
+      </Script>
+      <Component {...pageProps} />
+    </>
+  )
 }
