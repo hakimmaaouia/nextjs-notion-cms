@@ -2,7 +2,6 @@
 import * as React from 'react'
 import type { AppProps } from 'next/app'
 import { useRouter } from 'next/router'
-import Script from 'next/script'
 
 import * as Fathom from 'fathom-client'
 import { GoogleAnalytics } from '@next/third-parties/google'

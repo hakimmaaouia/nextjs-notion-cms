@@ -1,6 +1,5 @@
 import * as React from 'react'
 import Document, { Head, Html, Main, NextScript } from 'next/document'
-import Script from 'next/script'
 
 import { IconContext } from '@react-icons/all-files'
 
