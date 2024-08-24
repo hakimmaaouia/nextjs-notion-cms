@@ -5,6 +5,8 @@ import { useRouter } from 'next/router'
 import Script from 'next/script'
 
 import * as Fathom from 'fathom-client'
+import { GoogleAnalytics } from '@next/third-parties/google'
+import { Analytics } from '@vercel/analytics/react'
 // used for rendering equations (optional)
 import 'katex/dist/katex.min.css'
 import posthog from 'posthog-js'
@@ -64,19 +66,8 @@ export default function App({ Component, pageProps }: AppProps) {
 
   return (
     <>
-      <Script
-        strategy='lazyOnload'
-        src={`https://www.googletagmanager.com/gtag/js?id=G-09FJVF9NMV`}
-      />
-
-      <Script strategy='lazyOnload'>
-        {`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', 'G-09FJVF9NMV',{
-          page_path: window.location.pathname`}
-      </Script>
+      <Analytics mode={'production'} />;
+      <GoogleAnalytics gaId='G-09FJVF9NMV' />
       <Component {...pageProps} />
     </>
   )

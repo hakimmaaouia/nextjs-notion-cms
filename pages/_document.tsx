@@ -19,19 +19,6 @@ export default class MyDocument extends Document {
             />
 
             <link rel='manifest' href='/manifest.json' />
-            <Script
-              async
-              src='https://www.googletagmanager.com/gtag/js?id=G-09FJVF9NMV'
-            />
-
-            <Script id='google-analytics'>
-              {`
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-09FJVF9NMV');
-          `}
-            </Script>
           </Head>
 
           <body>
