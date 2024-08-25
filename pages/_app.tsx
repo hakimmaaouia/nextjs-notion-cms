@@ -65,7 +65,7 @@ export default function App({ Component, pageProps }: AppProps) {
 
   return (
     <>
-      <Analytics mode={'production'} />;
+      <Analytics mode={'production'} />
       <GoogleAnalytics gaId='G-09FJVF9NMV' />
       <Component {...pageProps} />
     </>
