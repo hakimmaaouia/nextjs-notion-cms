@@ -19,9 +19,19 @@ export function getCanonicalPageId(
   const override = inversePageUrlOverrides[cleanPageId]
   if (override) {
     return override
-  } else {
-    return getCanonicalPageIdImpl(pageId, recordMap, {
-      uuid
-    })
   }
+
+  const canonicalId = getCanonicalPageIdImpl(pageId, recordMap, { uuid })
+  if (!canonicalId) return canonicalId
+
+  // notion-utils uses an explicit `Slug`/`slug` page property verbatim when
+  // one exists (bypassing its own normalizeTitle), so stray whitespace or
+  // casing in the Notion property leaks into the URL and the sitemap. Strip
+  // surrounding whitespace, collapse any internal whitespace to dashes, and
+  // lowercase — otherwise a slug like "my-slug " 404s when the browser
+  // requests it without the trailing space.
+  return canonicalId
+    .trim()
+    .replace(/\s+/g, '-')
+    .toLowerCase()
 }
