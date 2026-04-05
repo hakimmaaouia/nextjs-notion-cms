@@ -47,9 +47,15 @@ export async function getPage(pageId: string): Promise<ExtendedRecordMap> {
     const navigationLinkRecordMaps = await getNavigationLinkPages()
 
     if (navigationLinkRecordMaps?.length) {
+      // NOTE: argument order matters. `mergeRecordMaps(a, b)` lets `b` win
+      // on key collisions, and the nav-link record maps are fetched with
+      // partial options (chunkLimit: 1, fetchMissingBlocks: false), so they
+      // can contain block value objects without an `id`. Passing the
+      // nav-link map as the first argument ensures the primary recordMap
+      // wins on collisions while nav-link-only entries are still added.
       recordMap = navigationLinkRecordMaps.reduce(
         (map, navigationLinkRecordMap) =>
-          mergeRecordMaps(map, navigationLinkRecordMap),
+          mergeRecordMaps(navigationLinkRecordMap, map),
         recordMap
       )
     }
@@ -58,6 +64,17 @@ export async function getPage(pageId: string): Promise<ExtendedRecordMap> {
   if (isPreviewImageSupportEnabled) {
     const previewImageMap = await getPreviewImageMap(recordMap)
     ;(recordMap as any).preview_images = previewImageMap
+  }
+
+  // Defense-in-depth: react-notion-x's <Block> calls `uuidToId(block.id)`
+  // unconditionally (react-notion-x/build/index.js:2067) and crashes on
+  // undefined. Ensure every block value carries an id by falling back to
+  // the record-map key, which is the block's own uuid.
+  for (const key of Object.keys(recordMap.block)) {
+    const entry = recordMap.block[key] as any
+    if (entry?.value && !entry.value.id) {
+      entry.value.id = key
+    }
   }
 
   return recordMap
