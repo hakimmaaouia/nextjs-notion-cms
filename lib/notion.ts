@@ -67,51 +67,6 @@ export async function getPage(pageId: string): Promise<ExtendedRecordMap> {
     ;(recordMap as any).preview_images = previewImageMap
   }
 
-  // Normalize record-map entry shape.
-  //
-  // Recent notion-client / Notion API responses double-wrap each entry as
-  //   { value: { value: <actualBlock>, role: 'reader', id: <uuid> } }
-  // instead of the classic react-notion-x shape
-  //   { value: <actualBlock>, role: 'reader' }
-  //
-  // react-notion-x does `recordMap.block[id].value` once, so on the new
-  // shape it sees the inner wrapper (no `.type`, no `.content`) and falls
-  // through to its "Unsupported type" branch — producing a blank page and
-  // the prerender crash in `uuidToId(block.id)`. Flatten every table here.
-  const tables: Array<keyof ExtendedRecordMap> = [
-    'block',
-    'collection',
-    'collection_view',
-    'notion_user'
-  ]
-  for (const table of tables) {
-    const section = (recordMap as any)[table]
-    if (!section) continue
-    for (const key of Object.keys(section)) {
-      const entry = section[key]
-      if (!entry) continue
-      const inner = entry.value
-      if (
-        inner &&
-        typeof inner === 'object' &&
-        inner.value &&
-        typeof inner.value === 'object'
-      ) {
-        section[key] = {
-          ...entry,
-          value: inner.value,
-          role: inner.role ?? entry.role
-        }
-      }
-      // Safety net for react-notion-x calling uuidToId(block.id) on a
-      // block value that somehow still lacks an id.
-      const normalized = section[key]
-      if (normalized?.value && !normalized.value.id) {
-        normalized.value.id = key
-      }
-    }
-  }
-
   return recordMap
 }
 
