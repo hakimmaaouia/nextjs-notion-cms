@@ -69,5 +69,5 @@ export default function App({ Component, pageProps }: AppProps) {
       <GoogleAnalytics gaId='G-09FJVF9NMV' />
       <Component {...pageProps} />
     </>
-  )
+  );
 }
