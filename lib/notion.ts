@@ -47,15 +47,16 @@ export async function getPage(pageId: string): Promise<ExtendedRecordMap> {
     const navigationLinkRecordMaps = await getNavigationLinkPages()
 
     if (navigationLinkRecordMaps?.length) {
-      // NOTE: argument order matters. `mergeRecordMaps(a, b)` lets `b` win
-      // on key collisions, and the nav-link record maps are fetched with
-      // partial options (chunkLimit: 1, fetchMissingBlocks: false), so they
-      // can contain block value objects without an `id`. Passing the
-      // nav-link map as the first argument ensures the primary recordMap
-      // wins on collisions while nav-link-only entries are still added.
+      // NOTE: keep the primary recordMap as the first argument so its
+      // block keys stay first in iteration order. react-notion-x's
+      // NotionBlockRenderer falls back to `Object.keys(recordMap.block)[0]`
+      // as the root block to render (it doesn't honor the `rootPageId`
+      // prop for this), so reversing the order would make a nav-link page
+      // render as the home page. The undefined-id crash from partial
+      // nav-link block values is handled by the backfill below.
       recordMap = navigationLinkRecordMaps.reduce(
         (map, navigationLinkRecordMap) =>
-          mergeRecordMaps(navigationLinkRecordMap, map),
+          mergeRecordMaps(map, navigationLinkRecordMap),
         recordMap
       )
     }
