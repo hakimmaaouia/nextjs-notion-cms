@@ -6,17 +6,27 @@ jobs:
   Build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v3
+      # Match the Node major that Vercel builds with (project setting: 18.x)
+      # so a build can't pass here and fail there.
+      - uses: actions/setup-node@v4
         with:
-          node-version: 16
-          cache: yarn
+          node-version: 18
+          cache: npm
 
-      - run: yarn install --frozen-lockfile
+      - run: npm ci
+
+      - name: lint
+        run: npm run test:lint
+
+      # This is the step that actually protects production: `next build`
+      # prerenders every page through the Notion API, so it fails here for the
+      # same reasons the Vercel build fails (403 / rate limits / missing pages)
+      # — before the commit reaches the production deployment.
       - name: build
         #        TODO Enable those lines below if you use a Redis cache, you'll also need to configure GitHub Repository Secrets
         #        env:
         #          REDIS_HOST: ${{ secrets.REDIS_HOST }}
         #          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
-        run: yarn build
+        run: npm run build
