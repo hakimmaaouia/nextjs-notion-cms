@@ -1,6 +1,18 @@
 name: Build
 
-on: [push, pull_request]
+# `on: [push, pull_request]` ran this twice for every branch pushed to this
+# repo — once for the push, once for the PR — which doubles a ~9 minute
+# Notion-backed build for no extra signal. Build pushes to main (the branch
+# Vercel deploys to production) and every PR, and nothing twice.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A newer commit makes an in-flight build obsolete; don't hold a runner for it.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   Build:
