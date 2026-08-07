@@ -15,6 +15,14 @@ export const getStaticProps: GetStaticProps<PageProps, Params> = async (
   try {
     const props = await resolveNotionPage(domain, rawPageId)
 
+    // `resolveNotionPage` returns an error object for unknown slugs instead of
+    // throwing. Passing that through as normal props renders a "not found"
+    // page with a 200 status, which Google classifies as a soft 404 and keeps
+    // crawling. `notFound` makes Next.js serve pages/404.tsx with a real 404.
+    if ((props as PageProps).error?.statusCode === 404) {
+      return { notFound: true, revalidate: 10 }
+    }
+
     return { props, revalidate: 10 }
   } catch (err) {
     console.error('page error', domain, rawPageId, err)
@@ -26,10 +34,14 @@ export const getStaticProps: GetStaticProps<PageProps, Params> = async (
 }
 
 export async function getStaticPaths() {
+  // `blocking` rather than `true`: with `fallback: true` a crawler hitting a
+  // path that wasn't prerendered receives an empty loading shell with no title,
+  // no meta tags and no content. `blocking` renders the real HTML server-side
+  // on first request instead.
   if (isDev) {
     return {
       paths: [],
-      fallback: true
+      fallback: 'blocking'
     }
   }
 
@@ -42,7 +54,7 @@ export async function getStaticPaths() {
       }
     })),
     // paths: [],
-    fallback: true
+    fallback: 'blocking'
   }
 
   console.log(staticPaths.paths)

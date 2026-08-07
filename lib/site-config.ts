@@ -8,6 +8,8 @@ export interface SiteConfig {
   domain: string
   author: string
   description?: string
+  // short descriptor appended to the homepage <title> after the site name
+  tagline?: string
   language?: string
 
   twitter?: string

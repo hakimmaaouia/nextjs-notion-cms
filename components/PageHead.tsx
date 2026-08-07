@@ -3,7 +3,12 @@ import Head from 'next/head'
 
 import * as config from '@/lib/config'
 import * as types from '@/lib/types'
+import {
+  getStructuredData,
+  serializeStructuredData
+} from '@/lib/get-structured-data'
 import { getSocialImageUrl } from '@/lib/get-social-image-url'
+import { MAX_DESCRIPTION_LENGTH, MAX_TITLE_LENGTH, truncate } from '@/lib/seo'
 
 export const PageHead: React.FC<
   types.PageProps & {
@@ -11,14 +16,65 @@ export const PageHead: React.FC<
     description?: string
     image?: string
     url?: string
+    isRootPage?: boolean
+    isBlogPost?: boolean
+    publishedTime?: string
+    modifiedTime?: string
+    noindex?: boolean
   }
-> = ({ site, title, description, pageId, image, url }) => {
+> = ({
+  site,
+  title,
+  description,
+  pageId,
+  image,
+  url,
+  isRootPage,
+  isBlogPost,
+  publishedTime,
+  modifiedTime,
+  noindex
+}) => {
   const rssFeedUrl = `${config.host}/feed`
 
-  title = title ?? site?.name
-  description = description ?? site?.description
+  const rawTitle = title ?? site?.name
+  description = truncate(
+    description ?? site?.description,
+    MAX_DESCRIPTION_LENGTH
+  )
+
+  // The root page's Notion title is just the author's name, which wastes the
+  // most valuable ranking real estate we have. Every other page gets the site
+  // name appended for brand recognition — but only when the result still fits
+  // inside the SERP's title budget, so we never cause a truncation.
+  const suffix = site?.name && rawTitle !== site.name ? ` | ${site.name}` : ''
+  const pageTitle = isRootPage
+    ? [site?.name ?? rawTitle, config.tagline].filter(Boolean).join(' — ')
+    : suffix && rawTitle.length + suffix.length <= MAX_TITLE_LENGTH
+    ? `${rawTitle}${suffix}`
+    : rawTitle
 
   const socialImageUrl = getSocialImageUrl(pageId) || image
+
+  // Not every Notion post has a "Published" property. Falling back to the
+  // modified time keeps a date in the SERP, which is what the RSS feed already
+  // does — an absent date is worse than an approximate one.
+  const published = publishedTime ?? modifiedTime
+  const modified = modifiedTime ?? publishedTime
+
+  const structuredData = noindex
+    ? null
+    : getStructuredData({
+        site,
+        title: rawTitle,
+        description,
+        url,
+        image: socialImageUrl,
+        isRootPage,
+        isBlogPost,
+        publishedTime: published,
+        modifiedTime: modified
+      })
 
   return (
     <Head>
@@ -38,8 +94,24 @@ export const PageHead: React.FC<
       <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fefffe" key="theme-color-light"/>
       <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#2d3439" key="theme-color-dark"/>
 
-      <meta name='robots' content='index,follow' />
-      <meta property='og:type' content='website' />
+      <meta
+        name='robots'
+        content={noindex ? 'noindex,nofollow' : 'index,follow'}
+      />
+      <meta name='author' content={config.author} />
+      <meta property='og:type' content={isBlogPost ? 'article' : 'website'} />
+
+      {isBlogPost && (
+        <>
+          {published && (
+            <meta property='article:published_time' content={published} />
+          )}
+          {modified && (
+            <meta property='article:modified_time' content={modified} />
+          )}
+          <meta property='article:author' content={config.author} />
+        </>
+      )}
 
       {site && (
         <>
@@ -49,7 +121,10 @@ export const PageHead: React.FC<
       )}
 
       {config.twitter && (
-        <meta name='twitter:creator' content={`@${config.twitter}`} />
+        <>
+          <meta name='twitter:site' content={`@${config.twitter}`} />
+          <meta name='twitter:creator' content={`@${config.twitter}`} />
+        </>
       )}
 
       {description && (
@@ -85,9 +160,18 @@ export const PageHead: React.FC<
         title={site?.name}
       />
 
-      <meta property='og:title' content={title} />
-      <meta name='twitter:title' content={title} />
-      <title>{title}</title>
+      <meta property='og:title' content={pageTitle} />
+      <meta name='twitter:title' content={pageTitle} />
+      <title>{pageTitle}</title>
+
+      {structuredData && (
+        <script
+          type='application/ld+json'
+          dangerouslySetInnerHTML={{
+            __html: serializeStructuredData(structuredData)
+          }}
+        />
+      )}
     </Head>
   )
 }
