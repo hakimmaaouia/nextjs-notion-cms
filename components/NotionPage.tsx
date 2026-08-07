@@ -6,7 +6,12 @@ import { useRouter } from 'next/router'
 
 import cs from 'classnames'
 import { PageBlock } from 'notion-types'
-import { formatDate, getBlockTitle, getPageProperty } from 'notion-utils'
+import {
+  formatDate,
+  getBlockTitle,
+  getPageProperty,
+  parsePageId
+} from 'notion-utils'
 import BodyClassName from 'react-body-classname'
 import { NotionRenderer } from 'react-notion-x'
 import TweetEmbed from 'react-tweet-embed'
@@ -17,6 +22,7 @@ import * as types from '@/lib/types'
 import { mapImageUrl } from '@/lib/map-image-url'
 import { getCanonicalPageUrl, mapPageUrl } from '@/lib/map-page-url'
 import { searchNotion } from '@/lib/search-notion'
+import { toIsoDate } from '@/lib/seo'
 import { useDarkMode } from '@/lib/use-dark-mode'
 
 import { Footer } from './Footer'
@@ -185,8 +191,10 @@ export const NotionPage: React.FC<types.PageProps> = ({
   const keys = Object.keys(recordMap?.block || {})
   const block = recordMap?.block?.[keys[0]]?.value
 
-  // const isRootPage =
-  //   parsePageId(block?.id) === parsePageId(site?.rootNotionPageId)
+  const isRootPage =
+    !!site &&
+    parsePageId(pageId, { uuid: false }) ===
+      parsePageId(site.rootNotionPageId, { uuid: false })
   const isBlogPost =
     block?.type === 'page' && block?.parent_table === 'collection'
 
@@ -242,6 +250,16 @@ export const NotionPage: React.FC<types.PageProps> = ({
     getPageProperty<string>('Description', block, recordMap) ||
     config.description
 
+  // Notion stores these as epoch milliseconds. `last_edited_time` is the
+  // fallback so posts without a "Last Updated" property still expose a
+  // modified date to search engines.
+  const publishedTime = toIsoDate(
+    getPageProperty<number>('Published', block, recordMap)
+  )
+  const modifiedTime =
+    toIsoDate(getPageProperty<number>('Last Updated', block, recordMap)) ??
+    toIsoDate(block?.last_edited_time)
+
   return (
     <>
       <PageHead
@@ -251,6 +269,10 @@ export const NotionPage: React.FC<types.PageProps> = ({
         description={socialDescription}
         image={socialImage}
         url={canonicalPageUrl}
+        isRootPage={isRootPage}
+        isBlogPost={isBlogPost}
+        publishedTime={publishedTime}
+        modifiedTime={modifiedTime}
       />
 
       {isLiteMode && <BodyClassName className='notion-lite' />}

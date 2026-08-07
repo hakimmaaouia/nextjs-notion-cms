@@ -13,8 +13,15 @@ export default siteConfig({
   domain: 'hakimmaaouia.vercel.app',
   author: 'Mohamed Hakim Maaouia',
 
+  // appended to the homepage <title> after the site name, so the root page
+  // ranks for what you do and not only for your name
+  tagline: 'Full Stack Developer',
+
   // open graph metadata (optional)
-  description: 'Mohamed Hakim Maaouia a full stack developer',
+  // used as the fallback meta description wherever a Notion page has no
+  // "Description" property, so keep it under ~160 characters
+  description:
+    'Mohamed Hakim Maaouia is a full stack developer writing about TypeScript, React and crypto.',
 
   // social usernames (optional)
   //twitter: 'transitive_bs',
